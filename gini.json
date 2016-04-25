@@ -1,0 +1,7 @@
+{
+    "id": "tag-db",
+    "name": "tag-db",
+    "description": "app about group data",
+    "version": "0.1.0",
+    "dependencies": []
+}
