@@ -15,18 +15,33 @@ class TagDB extends Base
 
     public function actionAuthorize($clientID, $clientSecret)
     {
-        $conf = \Gini\Config::get('gapper.rpc');
         try {
-            $rpc = \Gini\IoC::construct('\Gini\RPC', $conf['url']);
-            $bool = $rpc->gapper->app->authorize($clientID, $clientSecret);
+            $cacheKey = "gapper#authorize#{$clientID}#{$clientSecret}";
+            $data = self::cache($cacheKey);
+            if (false===$data) {
+                $conf = \Gini\Config::get('gapper.rpc');
+                $rpc = \Gini\IoC::construct('\Gini\RPC', $conf['url']);
+                $bool = $rpc->gapper->app->authorize($clientID, $clientSecret);
+                $data = $bool ? 1 : 0;
+                self::cache($cacheKey, $data);
+            }
         }
         catch (\Exception $e) {
             throw new \Gini\API\Exception('网络故障', 503);
         }
-        if ($bool) {
+        if ($data) {
             $this->setCurrentApp($clientID);
             return session_id();
         }
         throw new \Gini\API\Exception('非法的APP', 404);
+    }
+
+    public static function cache($key, $value=null)
+    {
+        $cacher = \Gini\Cache::of('defalut');
+        if (is_null($value)) {
+            return $cacher->get($key);
+        }
+        $cacher->set($key, $value, 300);
     }
 }
